@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-my_api_key = os.getenv("my_api_key")
+my_api_key = os.getenv("openweather_api_key")
 
 # Create your views here.
 
