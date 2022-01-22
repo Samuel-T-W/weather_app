@@ -125,8 +125,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-LOGOUT_REDIRECT_URL = "dashboard"
-LOGIN_REDIRECT_URL = "dashboard"
+LOGIN_REDIRECT_URL = "redirect/"
+LOGOUT_REDIRECT_URL = "redirect/"
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025

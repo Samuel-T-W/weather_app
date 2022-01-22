@@ -19,8 +19,11 @@ def register(request):
 def dashboard(request):
     return render(request, "users/dashboards.html") 
 
-def login(request):
-    return render(request, "registration/login.html") 
+def login_redirect(request):
+    return redirect('home')
 
-def password_reset(request):
-    return render(request, "registration/password_reset_form.html") 
+def logout_redirect(request):
+    return render(request, "registration/logout.html")
+    
+# def password_reset(request):
+#     return render(request, "registration/password_reset_form.html") 
