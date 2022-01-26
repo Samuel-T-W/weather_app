@@ -1,3 +1,4 @@
+from urllib import response
 from django.shortcuts import render, redirect
 from .models import City
 from .forms import CityForm
@@ -26,13 +27,14 @@ def index(request):
 
 		if form.is_valid():
 			new_city = form.cleaned_data['name']
-			existing_city_count = City.objects.filter(name=new_city).count()
-			
+			existing_city_count = City.objects.filter(user = request.user, name=new_city).count()	
+
 			if existing_city_count == 0:
 				r = requests.get(url.format(new_city, my_api_key)).json()
-
 				if r['cod'] == 200:
-					form.save()
+					obj = form.save(commit = False)
+					obj.user = request.user
+					obj.save()
 				else:
 					err_msg = 'City does not exist in the world!'
 			else:
@@ -47,13 +49,12 @@ def index(request):
 
 	form = CityForm()
 
-	cities = City.objects.all()
+	cities = City.objects.filter(user = request.user)
 
 	weather_data = []
-
+	
 	for city in cities:
-
-		r = requests.get(url.format(city, my_api_key)).json()
+		r = requests.get(url.format(city.name, my_api_key)).json()
 
 		city_weather = {
 			'city' : city.name,
@@ -74,6 +75,6 @@ def index(request):
 	return render(request, 'weather/weather.html', context)
 
 def delete_city(request, city_name):
-	City.objects.get(name=city_name).delete()
+	City.objects.get(user = request.user, name=city_name).delete()
 	
 	return redirect('home')

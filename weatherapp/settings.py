@@ -130,3 +130,6 @@ LOGOUT_REDIRECT_URL = "redirect/"
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
