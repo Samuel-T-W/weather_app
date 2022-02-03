@@ -47,33 +47,34 @@
     <section class="section">
         <div class="container">
             <div class="columns">
-                <div class="column is-offset-4 is-4">
-                    {% for city_weather in weather_data %}
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-left">
-                                <figure class="image is-50x50">
-                                    <img src="http://openweathermap.org/img/w/{{ city_weather.icon }}.png" alt="Image">
-                                </figure>
-                            </div>
-                            <div class="media-content">
-                                <div class="content">
-                                    <p>
-                                        <span class="title">{{ city_weather.city }}</span>
-                                        <br>
-                                        <span class="subtitle">{{ city_weather.temperature }}° C</span>
-                                        <br> {{ city_weather.description }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="media-right">
-                                <a href="{% url 'delete_city' city_weather.city %}">
-                                    <button class="delete"></button>
-                                </a>
-                            </div>
-                        </article>
-                    </div>
-                    {% endfor %}
+                <div id="cities" class="column is-offset-4 is-4">
+                        {% for city_weather in weather_data %}
+                            <div class="box">
+                                <article class="media">
+                                    <div class="media-left">
+                                        <figure class="image is-50x50">
+                                            <img src="http://openweathermap.org/img/w/{{ city_weather.icon }}.png" alt="Image">
+                                        </figure>
+                                    </div>
+                                    <div class="media-content">
+                                        <div class="content">
+                                            <p>
+                                                <span class="city">{{ city_weather.city }}</span>
+                                                <br>
+                                                <span class="temperature">{{ city_weather.temperature }}° C</span>
+                                                <br>
+                                                <span class="description">{{ city_weather.description }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="media-right">
+                                        <a href="{% url 'delete_city' city_weather.city %}">
+                                            <button class="delete"></button>
+                                        </a>
+                                    </div>
+                                </article>
+                            </div> 
+                        {% endfor %}
                 </div>
             </div>
         </div>
@@ -81,5 +82,7 @@
     <footer class="footer">
     </footer>
 </body>
-
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"> </script>
+{% load static %}
+<script src="{% static 'js/index.js' %}"></script>
 </html>
