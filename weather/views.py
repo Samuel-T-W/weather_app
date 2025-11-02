@@ -1,22 +1,39 @@
-from urllib import response
+from typing import Optional
 from django.shortcuts import render, redirect
 from .models import City
 from .forms import CityForm
-#from .api import your_api_key
 import requests
+import sentry_sdk
+import logging
 
 import os
 
 from dotenv import load_dotenv
 load_dotenv()
 
-my_api_key = os.getenv("openweather_api_key")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
-def index(request):
-	url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid={}'
+def get_city_coordinates(city_name) -> list:
+	""" Convert city names into longitude and lattiude values using OpenWeatherMap API"""
+	#TODO: add state and country code as some cities share same names
+	geocode_url = "http://api.openweathermap.org/geo/1.0/direct?q={}&limit=1&appid={}"
 
+	try:
+		response = requests.get(geocode_url.format(city_name, OPENWEATHER_API_KEY)).json()
+		# breakpoint()
+		#TODO: handle city name not found more gracefuly (let the user now instead of generic message)
+		print(f"response:{response}")
+		return response[0]['lat'], response[0]['lon']
+	except Exception as e:
+		logger.error(f"unexpected error occured for city: {city_name} with: {e}")
+		sentry_sdk.capture_exception(e)
+		return []
+
+def index(request):
+	url = 'https://api.openweathermap.org/data/3.0/onecall?lat={}&lon={}&units=metric&appid={}'
 
 	err_msg = ''
 	message = ''
@@ -30,15 +47,17 @@ def index(request):
 			existing_city_count = City.objects.filter(user = request.user, name=new_city).count()	
 
 			if existing_city_count == 0:
-				r = requests.get(url.format(new_city, my_api_key)).json()
-				if r['cod'] == 200:
+				#TODO handle no lat, long response more gracefully 
+				lat, long = get_city_coordinates(new_city)
+				r = requests.get(url.format(lat, long, OPENWEATHER_API_KEY)).json()
+				if "current" in r:
 					obj = form.save(commit = False)
 					obj.user = request.user
 					obj.save()
 				else:
 					err_msg = 'City does not exist in the world!'
 			else:
-				err_msg = 'City already exists in the database!'
+				err_msg = 'City already exists in you list of cities!'
 
 		if err_msg:
 			message = err_msg
@@ -52,18 +71,34 @@ def index(request):
 	cities = City.objects.filter(user = request.user)
 
 	weather_data = []
+	context={}
 	
 	for city in cities:
-		r = requests.get(url.format(city.name, my_api_key)).json()
+		try:
+			lat, long = get_city_coordinates(city.name)
+			r = requests.get(url.format(lat, long, OPENWEATHER_API_KEY)).json()
+			# breakpoint()
+			print(f"city:{city} r:{r}")
 
-		city_weather = {
-			'city' : city.name,
-			'temperature' : r['main']['temp'],
-			'description' : r['weather'][0]['description'],
-			'icon' : r['weather'][0]['icon'],
-		}
+			if "cod" in r:
+				sentry_sdk.capture_message(
+					f"Weather API error {r['cod']}: {r['message']}",
+					level="error"
+				)
+				continue
 
-		weather_data.append(city_weather)
+			city_weather = {
+				'city' : city.name,
+				'temperature' : r['current']['temp'],
+				'description' : r['current']['weather'][0]['description'],
+				'icon' : r['current']['weather'][0]['icon'],
+			}
+
+			weather_data.append(city_weather)
+   
+		except Exception as e:
+			logger.error(f"unexpected error occured for city: {city.name} with: {e}")
+			sentry_sdk.capture_exception(e)
 
 	context = {
 		'weather_data' : weather_data, 

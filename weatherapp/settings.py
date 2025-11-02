@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import dj_database_url 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,13 +23,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
+load_dotenv()
+
+DEV = os.getenv('DEV', 'False').lower() == "true"
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '@^g_=@n7i!(_vy@nrpk-datlx*)d1ga^0rlantgg=md4jl-_2u'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if DEV else False
 
-ALLOWED_HOSTS = ['weatherapp.herokuapp.com']
+if DEV:
+    ALLOWED_HOSTS = ['weatherapp.herokuapp.com', 'localhost', '127.0.0.1']
+else:   
+    ALLOWED_HOSTS = ['weatherapp.herokuapp.com']
 
 
 # Application definition
@@ -38,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # user added apps 
     'weather',
 ]
 
@@ -122,17 +135,17 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
-PROJECT_ROOT   =   os.path.join(os.path.abspath(__file__))
-STATIC_ROOT  =   os.path.join(PROJECT_ROOT, 'staticfiles')
+PROJECT_ROOT = BASE_DIR
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 # Extra lookup directories for collectstatic to find static files
 STATICFILES_DIRS = (
-    os.path.join(PROJECT_ROOT, 'static'),
+    os.path.join(BASE_DIR, 'static'),
 )
 
 #  Add configuration for static files storage using whitenoise
-STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_REDIRECT_URL = "redirect/"
 LOGOUT_REDIRECT_URL = "redirect/"
@@ -142,6 +155,16 @@ EMAIL_PORT = 1025
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-import dj_database_url 
+# Add Logging Configuration
+if not DEBUG:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=1.0,
+        send_default_pii=True,
+        environment="production",
+    )
+
+# Heroku prod db setup
 prod_db  =  dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
