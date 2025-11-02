@@ -28,9 +28,6 @@ load_dotenv()
 DEV = os.getenv('DEV', 'False').lower() == "true"
 SENTRY_DSN = os.getenv('SENTRY_DSN')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@^g_=@n7i!(_vy@nrpk-datlx*)d1ga^0rlantgg=md4jl-_2u'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if DEV else False
 
